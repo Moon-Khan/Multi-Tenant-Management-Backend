@@ -4,5 +4,5 @@ export class CreateTenantNoteDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(2000)
-  content: string
+  content!: string
 }

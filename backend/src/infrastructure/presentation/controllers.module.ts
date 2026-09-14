@@ -3,9 +3,10 @@ import { InfrastructureUsecasesBridgeModule } from '@infrastructure-usecases-bri
 import { TenantContextStorageModule } from '@infrastructure/context/tenant-context-storage.module'
 import { TenantController } from '@infrastructure/presentation/tenant/tenant.controller'
 import { TenantNoteController } from '@infrastructure/presentation/tenant-note/tenant-note.controller'
+import { HealthController } from '@infrastructure/presentation/health/health.controller'
 
 @Module({
   imports: [InfrastructureUsecasesBridgeModule, TenantContextStorageModule],
-  controllers: [TenantController, TenantNoteController],
+  controllers: [TenantController, TenantNoteController, HealthController],
 })
 export class ControllersModule {}

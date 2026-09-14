@@ -14,7 +14,7 @@ const TENANT_HEADER = 'x-tenant-slug'
 
 /**
  * Resolves the tenant for every incoming request and opens a transaction
- * scoped to it, with Postgres's `app.current_tenant_id` session variable set
+ * scoped to it, with Postgres's `app.current_tenant_id` session variable set`
  * via SET LOCAL so RLS policies can see it. The transaction is committed or
  * rolled back when the response finishes.
  *

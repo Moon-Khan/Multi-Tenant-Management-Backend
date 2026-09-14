@@ -4,7 +4,7 @@ export class CreateTenantDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(120)
-  name: string
+  name!: string
 
   @IsString()
   @IsNotEmpty()
@@ -12,5 +12,5 @@ export class CreateTenantDto {
   @Matches(/^[a-z0-9]+(-[a-z0-9]+)*$/, {
     message: 'slug must be lowercase, alphanumeric, hyphen-separated (e.g. "acme-corp")',
   })
-  slug: string
+  slug!: string
 }
