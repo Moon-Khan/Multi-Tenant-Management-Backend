@@ -2,6 +2,7 @@ import 'dotenv/config'
 import { DataSource } from 'typeorm'
 import { Tenant } from '@infrastructure/orm/entities/tenant.entity'
 import { TenantNote } from '@infrastructure/orm/entities/tenant-note.entity'
+import { User } from '@infrastructure/orm/entities/user.entity'
 
 /**
  * Standalone TypeORM DataSource used ONLY by the `typeorm` CLI
@@ -20,7 +21,7 @@ export default new DataSource({
   username: process.env.MIGRATION_DB_USERNAME ?? 'postgres',
   password: process.env.MIGRATION_DB_PASSWORD ?? 'postgres',
   database: process.env.DB_NAME ?? 'multitenant',
-  entities: [Tenant, TenantNote],
+  entities: [Tenant, TenantNote, User],
   migrations: [__dirname + '/migrations/*.{ts,js}'],
   synchronize: false,
 })
