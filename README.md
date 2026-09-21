@@ -20,12 +20,15 @@ The core idea: prove real multi-tenancy and role-based access control, the two t
 This project is being built incrementally. What's implemented so far:
 
 - [x] Clean/hexagonal module layout (`domain`, `use-cases`, `infrastructure`, `infrastructure-usecases-bridge`)
-- [x] Postgres RLS proven end-to-end: `tenants` and `tenant_notes` tables, RLS policies scoped to `tenant_id`, and a non-owner `app_runtime` DB role (migrations run as the owning superuser, which bypasses RLS — the app never does)
+- [x] Postgres RLS proven end-to-end: `tenants`, `tenant_notes` and `users` tables, RLS policies scoped to `tenant_id`, and a non-owner `app_runtime` DB role (migrations run as the owning superuser, which bypasses RLS — the app never does)
 - [x] Per-request tenant context middleware — resolves the tenant, opens a transaction, and sets the `app.current_tenant_id` session variable via `SET LOCAL` so RLS policies apply correctly under a pooled connection
+- [x] Password hashing (bcrypt) on registration
+- [x] JWT auth: register/login/refresh/logout, passport-jwt + passport-local strategies, refresh-token rotation with reuse detection (a replayed refresh token revokes its whole token family)
+- [x] Tenant resolution from a verified JWT — every tenant-scoped resource route now trusts the `tenantId` claim in a signed access token (`JwtTenantContextMiddleware`) instead of a spoofable header; the header-based path is kept only for register/login, the one place a JWT can't exist yet
 - [x] Centralized exception filters (HTTP + query-failure handling)
 - [x] Docker Compose infra for Postgres and Redis
 
-Not yet implemented (see roadmap above): JWT auth, RBAC, Redis-backed rate limiting, automated tests, CI, and the React admin panel. Tenant resolution currently reads a plain `x-tenant-slug` header as a stand-in — this will be replaced by reading the tenant claim out of a verified JWT once auth lands.
+Not yet implemented (see roadmap above): RBAC enforcement (the `role` claim/column exists but nothing checks it yet), Redis-backed rate limiting, automated tests, CI, and the React admin panel.
 
 ## Tech stack
 

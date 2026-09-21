@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { Tenant } from '@infrastructure/orm/entities/tenant.entity'
 import { TenantNote } from '@infrastructure/orm/entities/tenant-note.entity'
 import { User } from '@infrastructure/orm/entities/user.entity'
+import { RefreshToken } from '@infrastructure/orm/entities/refresh-token.entity'
 
 @Module({
   imports: [
@@ -17,9 +18,7 @@ import { User } from '@infrastructure/orm/entities/user.entity'
         username: configService.get<string>('database.username'),
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.name'),
-        entities: [Tenant, TenantNote, User],
-        // Schema changes go exclusively through migrations — see
-        // src/infrastructure/orm/migration/migrations.
+        entities: [Tenant, TenantNote, User, RefreshToken],
         synchronize: false,
       }),
     }),
