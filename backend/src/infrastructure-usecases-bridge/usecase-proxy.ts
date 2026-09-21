@@ -9,3 +9,4 @@ export default class UsecaseProxy<T> {
 export const TENANT_USECASE_PROXY = 'TenantUsecaseProxy'
 export const TENANT_NOTE_USECASE_PROXY = 'TenantNoteUsecaseProxy'
 export const USER_USECASE_PROXY = 'UserUsecaseProxy'
+export const AUTH_USECASE_PROXY = 'AuthUsecaseProxy'
