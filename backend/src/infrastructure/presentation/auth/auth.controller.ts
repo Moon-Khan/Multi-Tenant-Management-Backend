@@ -31,6 +31,7 @@ import {
   AuthUserPresenter,
 } from '@infrastructure/presentation/auth/auth.presenter'
 import { TenantContextStorage } from '@infrastructure/context/tenant-context.storage'
+import { ResponseMessage } from '@infrastructure/response/response-message.decorator'
 
 const REFRESH_COOKIE_NAME = 'refresh_token'
 
@@ -45,6 +46,7 @@ export class AuthController {
     private readonly tenantContextStorage: TenantContextStorage,
   ) {}
 
+  @ResponseMessage('User registered successfully')
   @HttpCode(HttpStatus.CREATED)
   @Post('register')
   async register(@Body() dto: RegisterDto): Promise<AuthUserPresenter> {
@@ -55,6 +57,7 @@ export class AuthController {
     return new AuthUserPresenter(user)
   }
 
+  @ResponseMessage('Login successful')
   @UseGuards(LocalAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('login')
@@ -68,6 +71,7 @@ export class AuthController {
     return this.issueTokensAndRespond(user, res)
   }
 
+  @ResponseMessage('Token refreshed successfully')
   @HttpCode(HttpStatus.OK)
   @Post('refresh')
   async refresh(
@@ -86,7 +90,9 @@ export class AuthController {
     return { accessToken }
   }
 
-  @HttpCode(HttpStatus.NO_CONTENT)
+
+  @ResponseMessage('Logged out successfully')
+  @HttpCode(HttpStatus.OK)
   @Post('logout')
   async logout(
     @Req() req: Request,
@@ -99,6 +105,7 @@ export class AuthController {
     res.clearCookie(REFRESH_COOKIE_NAME, { path: '/auth' })
   }
 
+  @ResponseMessage('Current user fetched successfully')
   @UseGuards(JwtAuthGuard)
   @Get('me')
   me(@CurrentUser() user: IAuthenticatedUser): IAuthenticatedUser {

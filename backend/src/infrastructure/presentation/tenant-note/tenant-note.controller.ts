@@ -14,13 +14,8 @@ import { TenantNoteUsecase } from '@use-cases/tenant-note/tenant-note.usecase'
 import { CreateTenantNoteDto } from '@infrastructure/presentation/tenant-note/tenant-note.dtos'
 import { TenantNotePresenter } from '@infrastructure/presentation/tenant-note/tenant-note.presenter'
 import { TenantContextStorage } from '@infrastructure/context/tenant-context.storage'
+import { ResponseMessage } from '@infrastructure/response/response-message.decorator'
 
-/**
- * Tenant-scoped resource. TenantContextMiddleware (wired to this controller
- * only, in app.module.ts) has already resolved the X-Tenant-Slug header into
- * a tenant id and opened an RLS-aware transaction by the time any handler
- * here runs — this is the vertical slice that proves the RLS mechanism.
- */
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('tenant-notes')
 export class TenantNoteController {
@@ -30,6 +25,7 @@ export class TenantNoteController {
     private readonly tenantContextStorage: TenantContextStorage,
   ) {}
 
+  @ResponseMessage('Note created successfully')
   @Post()
   async create(@Body() dto: CreateTenantNoteDto): Promise<TenantNotePresenter> {
     const { tenantId } = this.tenantContextStorage.requireStore()
@@ -37,6 +33,7 @@ export class TenantNoteController {
     return new TenantNotePresenter(note)
   }
 
+  @ResponseMessage('Notes fetched successfully')
   @Get()
   async findAll(): Promise<TenantNotePresenter[]> {
     const notes = await this.proxy.getInstance().findAll()
