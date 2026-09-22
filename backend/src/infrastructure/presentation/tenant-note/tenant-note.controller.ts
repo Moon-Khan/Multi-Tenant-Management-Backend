@@ -15,6 +15,7 @@ import { CreateTenantNoteDto } from '@infrastructure/presentation/tenant-note/te
 import { TenantNotePresenter } from '@infrastructure/presentation/tenant-note/tenant-note.presenter'
 import { TenantContextStorage } from '@infrastructure/context/tenant-context.storage'
 import { ResponseMessage } from '@infrastructure/response/response-message.decorator'
+import { Roles } from '@infrastructure/auth/decorators/roles.decorator'
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('tenant-notes')
@@ -25,6 +26,7 @@ export class TenantNoteController {
     private readonly tenantContextStorage: TenantContextStorage,
   ) {}
 
+  @Roles('admin', 'member')
   @ResponseMessage('Note created successfully')
   @Post()
   async create(@Body() dto: CreateTenantNoteDto): Promise<TenantNotePresenter> {

@@ -1,6 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core'
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
 import configuration from '@infrastructure/config/env-config/configuration'
 import { DatabaseOrmConfigModule } from '@infrastructure/orm/database-orm-config.module'
 import { TenantContextModule } from '@infrastructure/context/tenant-context.module'
@@ -10,6 +10,7 @@ import { ControllersModule } from '@infrastructure/presentation/controllers.modu
 import { TenantNoteController } from '@infrastructure/presentation/tenant-note/tenant-note.controller'
 import { AllExceptionsFilter } from '@infrastructure/exceptionHandler/all-exceptions.filter'
 import { ResponseInterceptor } from '@infrastructure/response/response.interceptor'
+import { RolesGuard } from '@infrastructure/auth/guards/roles.guard'
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ResponseInterceptor } from '@infrastructure/response/response.intercept
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule implements NestModule {

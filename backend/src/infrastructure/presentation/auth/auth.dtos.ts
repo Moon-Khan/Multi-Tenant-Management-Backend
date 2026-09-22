@@ -1,5 +1,4 @@
-import { IsEmail, IsIn, IsOptional, IsString, MinLength } from 'class-validator'
-import type { UserRole } from '@domain/model/user.interface'
+import { IsEmail, IsString, MinLength } from 'class-validator'
 
 export class RegisterDto {
   @IsEmail()
@@ -8,10 +7,6 @@ export class RegisterDto {
   @IsString()
   @MinLength(8)
   password!: string
-
-  @IsOptional()
-  @IsIn(['admin', 'member', 'viewer'])
-  role?: UserRole
 }
 
 export class LoginDto {
