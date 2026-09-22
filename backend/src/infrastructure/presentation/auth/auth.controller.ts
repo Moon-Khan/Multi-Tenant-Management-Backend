@@ -32,6 +32,7 @@ import {
 } from '@infrastructure/presentation/auth/auth.presenter'
 import { TenantContextStorage } from '@infrastructure/context/tenant-context.storage'
 import { ResponseMessage } from '@infrastructure/response/response-message.decorator'
+import { RateLimit } from '@infrastructure/rate-limit/rate-limit.decorator'
 
 const REFRESH_COOKIE_NAME = 'refresh_token'
 
@@ -46,6 +47,7 @@ export class AuthController {
     private readonly tenantContextStorage: TenantContextStorage,
   ) {}
 
+  @RateLimit(5, 60)
   @ResponseMessage('User registered successfully')
   @HttpCode(HttpStatus.CREATED)
   @Post('register')
@@ -57,6 +59,7 @@ export class AuthController {
     return new AuthUserPresenter(user)
   }
 
+  @RateLimit(10, 60)
   @ResponseMessage('Login successful')
   @UseGuards(LocalAuthGuard)
   @HttpCode(HttpStatus.OK)
