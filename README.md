@@ -25,10 +25,19 @@ This project is being built incrementally. What's implemented so far:
 - [x] Password hashing (bcrypt) on registration
 - [x] JWT auth: register/login/refresh/logout, passport-jwt + passport-local strategies, refresh-token rotation with reuse detection (a replayed refresh token revokes its whole token family)
 - [x] Tenant resolution from a verified JWT — every tenant-scoped resource route now trusts the `tenantId` claim in a signed access token (`JwtTenantContextMiddleware`) instead of a spoofable header; the header-based path is kept only for register/login, the one place a JWT can't exist yet
+<<<<<<< Updated upstream
 - [x] Centralized exception filters (HTTP + query-failure handling)
 - [x] Docker Compose infra for Postgres and Redis
 
 Not yet implemented (see roadmap above): RBAC enforcement (the `role` claim/column exists but nothing checks it yet), Redis-backed rate limiting, automated tests, CI, and the React admin panel.
+=======
+- [x] RBAC: a global `RolesGuard` (opt-in per route via `@Roles('admin', 'member', ...)`) checks the `role` claim already carried in the access token — e.g. `tenant-notes` creation is `admin`/`member` only, `viewer` is read-only. Self-registration can no longer set its own role (`RegisterDto` has no `role` field, `forbidNonWhitelisted` rejects the attempt outright) — every new account starts as `member`; promoting to `admin`/`viewer` is left for a future admin-managed-users endpoint
+- [x] Unified `{ status, msg, data }` response envelope for every response, success or error (`ResponseInterceptor` + a single consolidated `AllExceptionsFilter`)
+- [x] Per-tenant API rate limiting via Redis: a global `RateLimitGuard` gives every tenant its own shared quota (300 req/min by default) keyed by `tenantId`, so one noisy tenant can't starve another's — enforced with an atomic Lua `INCR`+`EXPIRE`, with `X-RateLimit-*`/`Retry-After` headers on every response. Unauthenticated routes (no tenant yet) fall back to per-IP limiting, and sensitive ones get their own tighter override via `@RateLimit(limit, windowSeconds)` — register is 5/min, login 10/min, both per IP
+- [x] Docker Compose infra for Postgres and Redis
+
+Not yet implemented (see roadmap above): automated tests, CI, and the React admin panel.
+>>>>>>> Stashed changes
 
 ## Tech stack
 
