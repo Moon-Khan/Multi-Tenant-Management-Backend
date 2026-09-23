@@ -25,19 +25,13 @@ This project is being built incrementally. What's implemented so far:
 - [x] Password hashing (bcrypt) on registration
 - [x] JWT auth: register/login/refresh/logout, passport-jwt + passport-local strategies, refresh-token rotation with reuse detection (a replayed refresh token revokes its whole token family)
 - [x] Tenant resolution from a verified JWT — every tenant-scoped resource route now trusts the `tenantId` claim in a signed access token (`JwtTenantContextMiddleware`) instead of a spoofable header; the header-based path is kept only for register/login, the one place a JWT can't exist yet
-<<<<<<< Updated upstream
-- [x] Centralized exception filters (HTTP + query-failure handling)
-- [x] Docker Compose infra for Postgres and Redis
-
-Not yet implemented (see roadmap above): RBAC enforcement (the `role` claim/column exists but nothing checks it yet), Redis-backed rate limiting, automated tests, CI, and the React admin panel.
-=======
 - [x] RBAC: a global `RolesGuard` (opt-in per route via `@Roles('admin', 'member', ...)`) checks the `role` claim already carried in the access token — e.g. `tenant-notes` creation is `admin`/`member` only, `viewer` is read-only. Self-registration can no longer set its own role (`RegisterDto` has no `role` field, `forbidNonWhitelisted` rejects the attempt outright) — every new account starts as `member`; promoting to `admin`/`viewer` is left for a future admin-managed-users endpoint
 - [x] Unified `{ status, msg, data }` response envelope for every response, success or error (`ResponseInterceptor` + a single consolidated `AllExceptionsFilter`)
 - [x] Per-tenant API rate limiting via Redis: a global `RateLimitGuard` gives every tenant its own shared quota (300 req/min by default) keyed by `tenantId`, so one noisy tenant can't starve another's — enforced with an atomic Lua `INCR`+`EXPIRE`, with `X-RateLimit-*`/`Retry-After` headers on every response. Unauthenticated routes (no tenant yet) fall back to per-IP limiting, and sensitive ones get their own tighter override via `@RateLimit(limit, windowSeconds)` — register is 5/min, login 10/min, both per IP
+- [x] Automated tests: 27 Jest unit tests (use-cases + `RolesGuard`) and 21 Supertest e2e tests running against the real Docker Postgres/Redis stack — the e2e suite is what actually proves RLS tenant isolation, JWT-based tenant resolution, RBAC enforcement, refresh-token rotation/reuse-detection, and rate limiting all work together, not just in isolation
 - [x] Docker Compose infra for Postgres and Redis
 
-Not yet implemented (see roadmap above): automated tests, CI, and the React admin panel.
->>>>>>> Stashed changes
+Not yet implemented (see roadmap above): CI and the React admin panel.
 
 ## Tech stack
 
@@ -92,10 +86,14 @@ Not yet implemented (see roadmap above): automated tests, CI, and the React admi
 ## Testing
 
 ```bash
-npm run test        # unit tests
-npm run test:e2e    # integration tests
+npm run test        # unit tests — pure, no external services needed
+npm run test:e2e    # integration tests — needs the infra up and migrated first:
+                     #   cd infra && docker compose up -d
+                     #   cd backend && npm run migration:run
 npm run test:cov    # coverage
 ```
+
+The e2e suite runs against the real dev Postgres/Redis (not mocks), so it's the thing that actually proves RLS isolation, JWT tenant resolution, RBAC, and rate limiting all work end to end. It runs serially (`--runInBand`) since every spec file shares that one Postgres instance and Redis's rate-limit counters.
 
 ## License
 
