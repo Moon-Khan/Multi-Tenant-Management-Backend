@@ -55,7 +55,7 @@ export class AuthController {
     const { tenantId } = this.tenantContextStorage.requireStore()
     const user = await this.userProxy
       .getInstance()
-      .register(tenantId, dto.email, dto.password, dto.role)
+      .register(tenantId, dto.email, dto.password)
     return new AuthUserPresenter(user)
   }
 
