@@ -17,7 +17,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:e2e": "jest --config ./test/jest-e2e.json --runInBand",
     "migration:generate": "cross-env NODE_OPTIONS=\"-r tsconfig-paths/register\" typeorm-ts-node-commonjs migration:generate -d src/infrastructure/orm/migration/data-source.ts",
     "migration:run": "cross-env NODE_OPTIONS=\"-r tsconfig-paths/register\" typeorm-ts-node-commonjs migration:run -d src/infrastructure/orm/migration/data-source.ts",
     "migration:revert": "cross-env NODE_OPTIONS=\"-r tsconfig-paths/register\" typeorm-ts-node-commonjs migration:revert -d src/infrastructure/orm/migration/data-source.ts"
@@ -87,6 +87,12 @@
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "^@domain/(.*)$": "<rootDir>/domain/$1",
+      "^@use-cases/(.*)$": "<rootDir>/use-cases/$1",
+      "^@infrastructure-usecases-bridge/(.*)$": "<rootDir>/infrastructure-usecases-bridge/$1",
+      "^@infrastructure/(.*)$": "<rootDir>/infrastructure/$1"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"

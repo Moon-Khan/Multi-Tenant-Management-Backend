@@ -32,4 +32,17 @@ export default tseslint.config(
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
   },
+  {
+    // Test files trade some type strictness for expressiveness: jest.fn()
+    // mocks typed as jest.Mocked<T> trip "unbound-method" on ordinary
+    // `expect(mock.method).toHaveBeenCalledWith(...)` assertions, and
+    // supertest's response.body is untyped `any` by design.
+    files: ['**/*.spec.ts', '**/*.e2e-spec.ts'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+    },
+  },
 );
