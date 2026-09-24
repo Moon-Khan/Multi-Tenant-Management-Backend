@@ -1,4 +1,9 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm'
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm'
 import { ITenantNote } from '@domain/model/tenant-note.interface'
 
 @Entity({ name: 'tenant_notes' })

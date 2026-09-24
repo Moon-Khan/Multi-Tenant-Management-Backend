@@ -30,9 +30,9 @@ describe('UserUsecase', () => {
     it('rejects a duplicate email without hashing the password or touching create', async () => {
       userRepository.findByEmail.mockResolvedValue(baseUser)
 
-      await expect(usecase.register('tenant-1', 'alice@example.com', 'password123')).rejects.toThrow(
-        ConflictException,
-      )
+      await expect(
+        usecase.register('tenant-1', 'alice@example.com', 'password123'),
+      ).rejects.toThrow(ConflictException)
       expect(userRepository.create).not.toHaveBeenCalled()
     })
 
@@ -60,7 +60,12 @@ describe('UserUsecase', () => {
         Promise.resolve({ ...baseUser, ...data }),
       )
 
-      await usecase.register('tenant-1', 'admin@example.com', 'password123', 'admin')
+      await usecase.register(
+        'tenant-1',
+        'admin@example.com',
+        'password123',
+        'admin',
+      )
 
       expect(userRepository.create.mock.calls[0][0].role).toBe('admin')
     })
@@ -72,10 +77,18 @@ describe('UserUsecase', () => {
       userRepository.create.mockImplementation((data) =>
         Promise.resolve({ ...baseUser, ...data }),
       )
-      const created = await usecase.register('tenant-1', 'alice@example.com', 'correct-password')
+      const created = await usecase.register(
+        'tenant-1',
+        'alice@example.com',
+        'correct-password',
+      )
 
-      await expect(usecase.validatePassword(created, 'correct-password')).resolves.toBe(true)
-      await expect(usecase.validatePassword(created, 'wrong-password')).resolves.toBe(false)
+      await expect(
+        usecase.validatePassword(created, 'correct-password'),
+      ).resolves.toBe(true)
+      await expect(
+        usecase.validatePassword(created, 'wrong-password'),
+      ).resolves.toBe(false)
     })
   })
 
@@ -83,9 +96,9 @@ describe('UserUsecase', () => {
     it('throws Unauthorized when no account exists for the email — same error as a wrong password', async () => {
       userRepository.findByEmail.mockResolvedValue(null)
 
-      await expect(usecase.validateCredentials('nobody@example.com', 'whatever')).rejects.toThrow(
-        UnauthorizedException,
-      )
+      await expect(
+        usecase.validateCredentials('nobody@example.com', 'whatever'),
+      ).rejects.toThrow(UnauthorizedException)
     })
 
     it('throws Unauthorized when the password is wrong', async () => {
@@ -93,7 +106,11 @@ describe('UserUsecase', () => {
       userRepository.create.mockImplementation((data) =>
         Promise.resolve({ ...baseUser, ...data }),
       )
-      const created = await usecase.register('tenant-1', 'bob@example.com', 'correct-password')
+      const created = await usecase.register(
+        'tenant-1',
+        'bob@example.com',
+        'correct-password',
+      )
       userRepository.findByEmail.mockResolvedValue(created)
 
       await expect(
@@ -106,12 +123,16 @@ describe('UserUsecase', () => {
       userRepository.create.mockImplementation((data) =>
         Promise.resolve({ ...baseUser, ...data }),
       )
-      const created = await usecase.register('tenant-1', 'alice@example.com', 'correct-password')
+      const created = await usecase.register(
+        'tenant-1',
+        'alice@example.com',
+        'correct-password',
+      )
       userRepository.findByEmail.mockResolvedValue(created)
 
-      await expect(usecase.validateCredentials('alice@example.com', 'correct-password')).resolves.toEqual(
-        created,
-      )
+      await expect(
+        usecase.validateCredentials('alice@example.com', 'correct-password'),
+      ).resolves.toEqual(created)
     })
   })
 })

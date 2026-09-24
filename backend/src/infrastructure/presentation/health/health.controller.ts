@@ -9,7 +9,6 @@ import { InjectDataSource } from '@nestjs/typeorm'
 import { DataSource } from 'typeorm'
 import { ResponseMessage } from '@infrastructure/response/response-message.decorator'
 
-
 @Controller()
 export class HealthController {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}

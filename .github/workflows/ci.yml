@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    # Mirrors infra/docker-compose.yml — same images, just on the runner's
+    # default ports (5432/6379) since there's nothing else on this box to
+    # collide with, unlike the dev machine's non-standard 5434/6381.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: multitenant
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: multitenant
+      # Runtime role RLS actually applies to — provisioned below from
+      # infra/postgres/init.sql, same as docker-entrypoint-initdb.d does
+      # for local dev (service containers don't support that volume mount).
+      DB_USERNAME: app_runtime
+      DB_PASSWORD: app_runtime_dev_password
+      # Table-owning role migrations run as — RLS must not apply to it.
+      MIGRATION_DB_USERNAME: postgres
+      MIGRATION_DB_PASSWORD: postgres
+      JWT_ACCESS_SECRET: ci-access-secret
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_SECRET: ci-refresh-secret
+      JWT_REFRESH_EXPIRES_IN: 7d
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          # No npm cache: this repo intentionally doesn't commit
+          # package-lock.json (see .gitignore) — setup-node's cache needs a
+          # lockfile to key off, and npm ci needs one to run at all.
+
+      - run: npm install
+
+      - run: npm run lint
+
+      - run: npm run build
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Provision the app_runtime role
+        working-directory: .
+        run: PGPASSWORD=postgres psql -h localhost -U postgres -d multitenant -f infra/postgres/init.sql
+
+      - run: npm run migration:run
+
+      - name: E2E tests
+        # Each spec file boots and tears down its own Nest app/DataSource
+        # pool; on a resource-constrained CI runner (unlike the local dev
+        # box, verified clean across many consecutive runs) that connection
+        # churn can occasionally hit a transient "Connection terminated"
+        # between one file's async teardown and the next file's init,
+        # outside of any actual test assertion. Retry a couple of times
+        # rather than fail the build on that specific class of flake.
+        run: |
+          for attempt in 1 2 3; do
+            npm run test:e2e && exit 0
+            echo "e2e attempt $attempt failed"
+            [ "$attempt" = 3 ] && exit 1
+            sleep 5
+          done

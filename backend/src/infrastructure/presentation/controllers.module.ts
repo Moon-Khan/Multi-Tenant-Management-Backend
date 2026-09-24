@@ -7,7 +7,11 @@ import { HealthController } from '@infrastructure/presentation/health/health.con
 import { AuthModule } from '@infrastructure/auth/auth.module'
 
 @Module({
-  imports: [InfrastructureUsecasesBridgeModule, TenantContextStorageModule, AuthModule],
+  imports: [
+    InfrastructureUsecasesBridgeModule,
+    TenantContextStorageModule,
+    AuthModule,
+  ],
   controllers: [TenantController, TenantNoteController, HealthController],
 })
 export class ControllersModule {}

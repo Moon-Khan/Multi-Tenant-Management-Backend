@@ -19,7 +19,7 @@ async function bootstrap() {
 
   const port = configService.get<number>('app.port') ?? 3000
   await app.listen(port)
-  // eslint-disable-next-line no-console
+
   console.log(`atlas-multitenant-api listening on :${port}`)
 }
 bootstrap()

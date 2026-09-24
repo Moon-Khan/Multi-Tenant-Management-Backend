@@ -9,9 +9,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm'
  * tenant slug, so two different tenants may each have their own
  * "admin@company.com" without colliding.
  */
-export class CreateUsersTableWithRls1785069472500
-  implements MigrationInterface
-{
+export class CreateUsersTableWithRls1785069472500 implements MigrationInterface {
   name = 'CreateUsersTableWithRls1785069472500'
 
   public async up(queryRunner: QueryRunner): Promise<void> {

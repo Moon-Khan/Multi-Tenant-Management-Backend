@@ -6,7 +6,8 @@ import { RefreshTokenRepository } from '@infrastructure/orm/repositories/refresh
 import { IUser } from '@domain/model/user.interface'
 import { IRefreshToken } from '@domain/model/refresh-token.interface'
 
-const hashToken = (token: string): string => createHash('sha256').update(token).digest('hex')
+const hashToken = (token: string): string =>
+  createHash('sha256').update(token).digest('hex')
 
 describe('AuthUsecase', () => {
   let refreshTokenRepository: jest.Mocked<RefreshTokenRepository>
@@ -30,7 +31,9 @@ describe('AuthUsecase', () => {
     updatedAt: new Date(),
   }
 
-  const storedRecord = (overrides: Partial<IRefreshToken> = {}): IRefreshToken => ({
+  const storedRecord = (
+    overrides: Partial<IRefreshToken> = {},
+  ): IRefreshToken => ({
     id: 'jti-1',
     userId: user.id,
     tenantId: user.tenantId,
@@ -95,7 +98,8 @@ describe('AuthUsecase', () => {
         Promise.resolve(storedRecord({ ...data })),
       )
 
-      const { accessToken, refreshToken: secondRefresh } = await usecase.refresh(firstRefresh)
+      const { accessToken, refreshToken: secondRefresh } =
+        await usecase.refresh(firstRefresh)
 
       expect(secondRefresh).not.toBe(firstRefresh)
       expect(refreshTokenRepository.markRotated).toHaveBeenCalledWith(
@@ -107,26 +111,36 @@ describe('AuthUsecase', () => {
       const accessPayload = await jwtService.verifyAsync(accessToken, {
         secret: jwtSettings.accessSecret,
       })
-      expect(accessPayload).toMatchObject({ sub: user.id, tenantId: user.tenantId })
+      expect(accessPayload).toMatchObject({
+        sub: user.id,
+        tenantId: user.tenantId,
+      })
     })
 
     it('rejects an unknown token id', async () => {
       const { refreshToken } = await usecase.issueTokens(user)
       refreshTokenRepository.findById.mockResolvedValue(null)
 
-      await expect(usecase.refresh(refreshToken)).rejects.toThrow(UnauthorizedException)
+      await expect(usecase.refresh(refreshToken)).rejects.toThrow(
+        UnauthorizedException,
+      )
     })
 
     it('detects reuse of an already-rotated token and revokes the whole family', async () => {
       const { refreshToken } = await usecase.issueTokens(user)
       refreshTokenRepository.findById.mockResolvedValue(
-        storedRecord({ tokenHash: hashToken(refreshToken), revokedAt: new Date() }),
+        storedRecord({
+          tokenHash: hashToken(refreshToken),
+          revokedAt: new Date(),
+        }),
       )
 
       await expect(usecase.refresh(refreshToken)).rejects.toThrow(
         'Refresh token has already been used',
       )
-      expect(refreshTokenRepository.revokeAllForUser).toHaveBeenCalledWith(user.id)
+      expect(refreshTokenRepository.revokeAllForUser).toHaveBeenCalledWith(
+        user.id,
+      )
     })
 
     it('rejects a token whose hash does not match the stored record and revokes the family', async () => {
@@ -135,14 +149,24 @@ describe('AuthUsecase', () => {
         storedRecord({ tokenHash: hashToken('a-completely-different-token') }),
       )
 
-      await expect(usecase.refresh(refreshToken)).rejects.toThrow(UnauthorizedException)
-      expect(refreshTokenRepository.revokeAllForUser).toHaveBeenCalledWith(user.id)
+      await expect(usecase.refresh(refreshToken)).rejects.toThrow(
+        UnauthorizedException,
+      )
+      expect(refreshTokenRepository.revokeAllForUser).toHaveBeenCalledWith(
+        user.id,
+      )
     })
 
     it('rejects a token signed with the wrong secret', async () => {
       const rogueJwtService = new JwtService()
       const forgedToken = await rogueJwtService.signAsync(
-        { sub: user.id, tenantId: user.tenantId, role: user.role, email: user.email, jti: 'x' },
+        {
+          sub: user.id,
+          tenantId: user.tenantId,
+          role: user.role,
+          email: user.email,
+          jti: 'x',
+        },
         { secret: 'not-the-real-secret', expiresIn: '7d' },
       )
 

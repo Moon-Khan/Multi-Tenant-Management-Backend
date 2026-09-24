@@ -1,5 +1,10 @@
 import request from 'supertest'
-import { clearRateLimits, createTestApp, ITestApp, uniqueSuffix } from './utils/test-app'
+import {
+  clearRateLimits,
+  createTestApp,
+  ITestApp,
+  uniqueSuffix,
+} from './utils/test-app'
 
 describe('Rate limiting (e2e)', () => {
   let ctx: ITestApp
@@ -25,7 +30,10 @@ describe('Rate limiting (e2e)', () => {
       const res = await request(ctx.app.getHttpServer())
         .post('/auth/register')
         .set('x-tenant-slug', tenantSlug)
-        .send({ email: `rl-${i}-${uniqueSuffix()}@example.com`, password: 'supersecret123' })
+        .send({
+          email: `rl-${i}-${uniqueSuffix()}@example.com`,
+          password: 'supersecret123',
+        })
 
       expect(res.status).toBe(201)
       expect(res.headers['x-ratelimit-limit']).toBe('5')
@@ -35,7 +43,10 @@ describe('Rate limiting (e2e)', () => {
     const blocked = await request(ctx.app.getHttpServer())
       .post('/auth/register')
       .set('x-tenant-slug', tenantSlug)
-      .send({ email: `rl-blocked-${uniqueSuffix()}@example.com`, password: 'supersecret123' })
+      .send({
+        email: `rl-blocked-${uniqueSuffix()}@example.com`,
+        password: 'supersecret123',
+      })
       .expect(429)
 
     expect(blocked.body).toMatchObject({

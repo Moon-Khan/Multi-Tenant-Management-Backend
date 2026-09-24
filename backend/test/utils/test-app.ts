@@ -18,9 +18,13 @@ export interface ITestApp {
  * verification, the actual RolesGuard/RateLimitGuard, not mocks of them.
  */
 export async function createTestApp(): Promise<ITestApp> {
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile()
+  const moduleRef = await Test.createTestingModule({
+    imports: [AppModule],
+  }).compile()
   const app = moduleRef.createNestApplication()
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  app.useGlobalPipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+  )
   app.use(cookieParser())
   await app.init()
 
@@ -44,4 +48,5 @@ export async function clearRateLimits(redis: Redis): Promise<void> {
 // `npm run test:e2e` runs against the same persistent dev database never
 // collide with previous runs' rows (tenants.slug and users(tenant_id,
 // email) are both unique).
-export const uniqueSuffix = (): string => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+export const uniqueSuffix = (): string =>
+  `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`

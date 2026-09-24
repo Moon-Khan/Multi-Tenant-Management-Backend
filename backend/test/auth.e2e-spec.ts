@@ -1,11 +1,21 @@
 import request from 'supertest'
-import { clearRateLimits, createTestApp, ITestApp, uniqueSuffix } from './utils/test-app'
+import {
+  clearRateLimits,
+  createTestApp,
+  ITestApp,
+  uniqueSuffix,
+} from './utils/test-app'
 
 // Extracts just the "name=value" pair supertest's raw Set-Cookie string
 // needs stripped down to before it can be sent back as a Cookie header
 // (the attributes like Path/HttpOnly aren't valid on an outgoing Cookie).
-function extractCookie(setCookieHeaders: string[] | undefined, name: string): string {
-  const header = setCookieHeaders?.find((cookie) => cookie.startsWith(`${name}=`))
+function extractCookie(
+  setCookieHeaders: string[] | undefined,
+  name: string,
+): string {
+  const header = setCookieHeaders?.find((cookie) =>
+    cookie.startsWith(`${name}=`),
+  )
   if (!header) {
     throw new Error(`Cookie "${name}" not found in Set-Cookie headers`)
   }
@@ -37,7 +47,11 @@ describe('Auth (e2e)', () => {
     const res = await request(ctx.app.getHttpServer())
       .post('/auth/register')
       .set('x-tenant-slug', tenantSlug)
-      .send({ email: `hacker-${uniqueSuffix()}@example.com`, password, role: 'admin' })
+      .send({
+        email: `hacker-${uniqueSuffix()}@example.com`,
+        password,
+        role: 'admin',
+      })
       .expect(400)
 
     expect(res.body).toMatchObject({ status: 400, msg: 'Validation failed' })
@@ -88,7 +102,10 @@ describe('Auth (e2e)', () => {
     expect(res.body.data.user).toMatchObject({ email, role: 'member' })
 
     accessToken = res.body.data.accessToken as string
-    refreshCookie = extractCookie(res.headers['set-cookie'] as string[] | undefined, 'refresh_token')
+    refreshCookie = extractCookie(
+      res.headers['set-cookie'] as string[] | undefined,
+      'refresh_token',
+    )
   })
 
   it('rejects a protected route with no access token', async () => {
@@ -147,9 +164,15 @@ describe('Auth (e2e)', () => {
       .set('x-tenant-slug', tenantSlug)
       .send({ email, password })
       .expect(200)
-    const cookie = extractCookie(login.headers['set-cookie'] as string[] | undefined, 'refresh_token')
+    const cookie = extractCookie(
+      login.headers['set-cookie'] as string[] | undefined,
+      'refresh_token',
+    )
 
-    await request(ctx.app.getHttpServer()).post('/auth/logout').set('Cookie', cookie).expect(200)
+    await request(ctx.app.getHttpServer())
+      .post('/auth/logout')
+      .set('Cookie', cookie)
+      .expect(200)
 
     await request(ctx.app.getHttpServer())
       .post('/auth/refresh')

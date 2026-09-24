@@ -1,35 +1,56 @@
 import request from 'supertest'
-import { DataSource } from 'typeorm'
-import { clearRateLimits, createTestApp, ITestApp, uniqueSuffix } from './utils/test-app'
+import { Client } from 'pg'
+import {
+  clearRateLimits,
+  createTestApp,
+  ITestApp,
+  uniqueSuffix,
+} from './utils/test-app'
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms))
 
 // There's no API for creating a non-member account (self-registration is
 // deliberately locked to "member" — see the RBAC privilege-escalation
-// fix), so RBAC tests seed a viewer directly. Goes through a real
-// SET LOCAL app.current_tenant_id transaction, same as the app's own
-// request-scoped middleware, so RLS still applies to the write.
+// fix), so RBAC tests seed a viewer directly, connecting as the
+// table-owning superuser (same role migrations use) so the write bypasses
+// RLS entirely — this is test fixture setup, not something that needs to
+// prove RLS holds for a write.
+//
+// Retries briefly: the register call right before this resolves as soon
+// as its HTTP response is sent, but TenantContextMiddleware commits that
+// request's transaction asynchronously from a `res.on('finish', ...)`
+// handler — so immediately after the response, the row can still be a few
+// milliseconds from actually being committed and visible.
 async function setUserRole(
-  dataSource: DataSource,
   tenantId: string,
   email: string,
   role: string,
 ): Promise<void> {
-  const queryRunner = dataSource.createQueryRunner()
-  await queryRunner.connect()
-  await queryRunner.startTransaction()
+  const client = new Client({
+    host: process.env.DB_HOST ?? 'localhost',
+    port: Number(process.env.DB_PORT ?? 5434),
+    user: process.env.MIGRATION_DB_USERNAME ?? 'postgres',
+    password: process.env.MIGRATION_DB_PASSWORD ?? 'postgres',
+    database: process.env.DB_NAME ?? 'multitenant',
+  })
+  await client.connect()
   try {
-    await queryRunner.query('SELECT set_config($1, $2, true)', ['app.current_tenant_id', tenantId])
-    const result = await queryRunner.query(
-      'UPDATE users SET role = $1 WHERE tenant_id = $2 AND email = $3 RETURNING id',
-      [role, tenantId, email],
-    )
-    if (!Array.isArray(result) || result.length === 0) {
-      throw new Error(
-        `setUserRole matched no row for tenant ${tenantId} / ${email} — RLS blocked it or the row doesn't exist`,
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const result = await client.query(
+        'UPDATE users SET role = $1 WHERE tenant_id = $2 AND email = $3 RETURNING id',
+        [role, tenantId, email],
       )
+      if ((result.rowCount ?? 0) > 0) {
+        return
+      }
+      await sleep(50)
     }
-    await queryRunner.commitTransaction()
+    throw new Error(
+      `setUserRole: no user found for tenant ${tenantId} / ${email} after retrying`,
+    )
   } finally {
-    await queryRunner.release()
+    await client.end()
   }
 }
 
@@ -93,7 +114,7 @@ describe('Tenant Notes (e2e)', () => {
       .set('x-tenant-slug', tenantASlug)
       .send({ email: viewerEmail, password })
       .expect(201)
-    await setUserRole(ctx.app.get(DataSource), tenantAId, viewerEmail, 'viewer')
+    await setUserRole(tenantAId, viewerEmail, 'viewer')
   })
 
   afterAll(async () => {
@@ -118,7 +139,10 @@ describe('Tenant Notes (e2e)', () => {
       .send({ content: 'tenant A note' })
       .expect(201)
 
-    expect(res.body).toMatchObject({ status: 201, msg: 'Note created successfully' })
+    expect(res.body).toMatchObject({
+      status: 201,
+      msg: 'Note created successfully',
+    })
     expect(res.body.data.content).toBe('tenant A note')
   })
 

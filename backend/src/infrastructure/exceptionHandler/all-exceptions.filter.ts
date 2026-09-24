@@ -38,7 +38,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     if (exception instanceof QueryFailedError) {
-      return { status: HttpStatus.BAD_REQUEST, msg: exception.message, data: null }
+      return {
+        status: HttpStatus.BAD_REQUEST,
+        msg: exception.message,
+        data: null,
+      }
     }
 
     return {
@@ -66,7 +70,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const extraEntries = Object.entries(body as Record<string, unknown>).filter(
       ([key]) => !KNOWN_BODY_KEYS.has(key),
     )
-    const data = extraEntries.length > 0 ? Object.fromEntries(extraEntries) : null
+    const data =
+      extraEntries.length > 0 ? Object.fromEntries(extraEntries) : null
 
     return { status, msg, data }
   }

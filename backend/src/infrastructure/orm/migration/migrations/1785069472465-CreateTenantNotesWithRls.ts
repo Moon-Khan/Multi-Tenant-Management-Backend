@@ -16,9 +16,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm'
  * a separate, non-owner "app_runtime" role (provisioned in
  * infra/postgres/init.sql) precisely so these policies actually apply to it.
  */
-export class CreateTenantNotesWithRls1785069472465
-  implements MigrationInterface
-{
+export class CreateTenantNotesWithRls1785069472465 implements MigrationInterface {
   name = 'CreateTenantNotesWithRls1785069472465'
 
   public async up(queryRunner: QueryRunner): Promise<void> {

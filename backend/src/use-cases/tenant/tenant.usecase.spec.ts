@@ -30,7 +30,9 @@ describe('TenantUsecase', () => {
     it('rejects a slug that is already taken', async () => {
       tenantRepository.findBySlug.mockResolvedValue(tenant)
 
-      await expect(usecase.create('Acme Corp', 'acme-corp')).rejects.toThrow(ConflictException)
+      await expect(usecase.create('Acme Corp', 'acme-corp')).rejects.toThrow(
+        ConflictException,
+      )
       expect(tenantRepository.create).not.toHaveBeenCalled()
     })
 
@@ -38,8 +40,13 @@ describe('TenantUsecase', () => {
       tenantRepository.findBySlug.mockResolvedValue(null)
       tenantRepository.create.mockResolvedValue(tenant)
 
-      await expect(usecase.create('Acme Corp', 'acme-corp')).resolves.toEqual(tenant)
-      expect(tenantRepository.create).toHaveBeenCalledWith({ name: 'Acme Corp', slug: 'acme-corp' })
+      await expect(usecase.create('Acme Corp', 'acme-corp')).resolves.toEqual(
+        tenant,
+      )
+      expect(tenantRepository.create).toHaveBeenCalledWith({
+        name: 'Acme Corp',
+        slug: 'acme-corp',
+      })
     })
   })
 
@@ -47,7 +54,9 @@ describe('TenantUsecase', () => {
     it('throws NotFound for an unknown id', async () => {
       tenantRepository.findById.mockResolvedValue(null)
 
-      await expect(usecase.findOne('missing-id')).rejects.toThrow(NotFoundException)
+      await expect(usecase.findOne('missing-id')).rejects.toThrow(
+        NotFoundException,
+      )
     })
 
     it('returns the tenant when found', async () => {
