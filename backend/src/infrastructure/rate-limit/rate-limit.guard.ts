@@ -11,7 +11,10 @@ import { Reflector } from '@nestjs/core'
 import type { Request, Response } from 'express'
 import type { Redis } from 'ioredis'
 import { REDIS_CLIENT } from '@infrastructure/redis/redis.module'
-import { IRateLimitOptions, RATE_LIMIT_KEY } from '@infrastructure/rate-limit/rate-limit.decorator'
+import {
+  IRateLimitOptions,
+  RATE_LIMIT_KEY,
+} from '@infrastructure/rate-limit/rate-limit.decorator'
 import type { IAuthenticatedUser } from '@infrastructure/auth/strategies/jwt.strategy'
 
 const DEFAULT_OPTIONS: IRateLimitOptions = { limit: 300, windowSeconds: 60 }
@@ -34,10 +37,9 @@ export class RateLimitGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const override = this.reflector.getAllAndOverride<IRateLimitOptions | undefined>(
-      RATE_LIMIT_KEY,
-      [context.getHandler(), context.getClass()],
-    )
+    const override = this.reflector.getAllAndOverride<
+      IRateLimitOptions | undefined
+    >(RATE_LIMIT_KEY, [context.getHandler(), context.getClass()])
     const options = override ?? DEFAULT_OPTIONS
 
     const request = context.switchToHttp().getRequest<Request>()
@@ -53,13 +55,17 @@ export class RateLimitGuard implements CanActivate {
         options.windowSeconds,
       )) as number
     } catch (error) {
-
-      this.logger.warn(`Rate limit check failed, allowing request through: ${String(error)}`)
+      this.logger.warn(
+        `Rate limit check failed, allowing request through: ${String(error)}`,
+      )
       return true
     }
 
     response.setHeader('X-RateLimit-Limit', options.limit)
-    response.setHeader('X-RateLimit-Remaining', Math.max(options.limit - current, 0))
+    response.setHeader(
+      'X-RateLimit-Remaining',
+      Math.max(options.limit - current, 0),
+    )
 
     if (current > options.limit) {
       const ttl = await this.redis.ttl(key)
@@ -75,8 +81,12 @@ export class RateLimitGuard implements CanActivate {
 
   private resolveKey(request: Request, isRouteSpecific: boolean): string {
     const user = request.user as IAuthenticatedUser | undefined
-    const scope = user?.tenantId ? `tenant:${user.tenantId}` : `ip:${request.ip}`
+    const scope = user?.tenantId
+      ? `tenant:${user.tenantId}`
+      : `ip:${request.ip}`
 
-    return isRouteSpecific ? `ratelimit:${scope}:${request.method}:${request.path}` : `ratelimit:${scope}`
+    return isRouteSpecific
+      ? `ratelimit:${scope}:${request.method}:${request.path}`
+      : `ratelimit:${scope}`
   }
 }

@@ -6,7 +6,9 @@ describe('RolesGuard', () => {
   let reflector: jest.Mocked<Reflector>
   let guard: RolesGuard
 
-  const contextWithUser = (user: { role: string } | undefined): ExecutionContext =>
+  const contextWithUser = (
+    user: { role: string } | undefined,
+  ): ExecutionContext =>
     ({
       getHandler: () => jest.fn(),
       getClass: () => jest.fn(),
@@ -14,7 +16,9 @@ describe('RolesGuard', () => {
     }) as unknown as ExecutionContext
 
   beforeEach(() => {
-    reflector = { getAllAndOverride: jest.fn() } as unknown as jest.Mocked<Reflector>
+    reflector = {
+      getAllAndOverride: jest.fn(),
+    } as unknown as jest.Mocked<Reflector>
     guard = new RolesGuard(reflector)
   })
 
@@ -33,14 +37,16 @@ describe('RolesGuard', () => {
   it('rejects a caller whose role is not in the required list', () => {
     reflector.getAllAndOverride.mockReturnValue(['admin', 'member'])
 
-    expect(() => guard.canActivate(contextWithUser({ role: 'viewer' }))).toThrow(
-      ForbiddenException,
-    )
+    expect(() =>
+      guard.canActivate(contextWithUser({ role: 'viewer' })),
+    ).toThrow(ForbiddenException)
   })
 
   it('rejects when there is no authenticated user at all', () => {
     reflector.getAllAndOverride.mockReturnValue(['admin'])
 
-    expect(() => guard.canActivate(contextWithUser(undefined))).toThrow(ForbiddenException)
+    expect(() => guard.canActivate(contextWithUser(undefined))).toThrow(
+      ForbiddenException,
+    )
   })
 })

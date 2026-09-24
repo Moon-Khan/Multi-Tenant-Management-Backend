@@ -8,7 +8,6 @@ import {
 import { IRefreshToken } from '@domain/model/refresh-token.interface'
 import { RefreshToken } from '@infrastructure/orm/entities/refresh-token.entity'
 
-
 @Injectable()
 export class RefreshTokenRepository implements IRefreshTokenRepository {
   constructor(
@@ -17,7 +16,9 @@ export class RefreshTokenRepository implements IRefreshTokenRepository {
   ) {}
 
   create(data: ICreateRefreshTokenData): Promise<IRefreshToken> {
-    return this.repo.save(this.repo.create({ ...data, revokedAt: null, replacedByTokenId: null }))
+    return this.repo.save(
+      this.repo.create({ ...data, revokedAt: null, replacedByTokenId: null }),
+    )
   }
 
   findById(id: string): Promise<IRefreshToken | null> {
@@ -33,6 +34,9 @@ export class RefreshTokenRepository implements IRefreshTokenRepository {
   }
 
   async revokeAllForUser(userId: string): Promise<void> {
-    await this.repo.update({ userId, revokedAt: IsNull() }, { revokedAt: new Date() })
+    await this.repo.update(
+      { userId, revokedAt: IsNull() },
+      { revokedAt: new Date() },
+    )
   }
 }

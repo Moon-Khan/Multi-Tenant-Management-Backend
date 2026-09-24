@@ -1,4 +1,8 @@
-import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common'
+import {
+  Injectable,
+  NestMiddleware,
+  UnauthorizedException,
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { InjectDataSource } from '@nestjs/typeorm'
 import { JwtService } from '@nestjs/jwt'
@@ -32,9 +36,12 @@ export class JwtTenantContextMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const token = this.extractBearerToken(req)
-      const payload = await this.jwtService.verifyAsync<IAccessTokenPayload>(token, {
-        secret: this.configService.get<string>('jwtConfig.accessSecret'),
-      })
+      const payload = await this.jwtService.verifyAsync<IAccessTokenPayload>(
+        token,
+        {
+          secret: this.configService.get<string>('jwtConfig.accessSecret'),
+        },
+      )
 
       req.user = {
         userId: payload.sub,
@@ -60,9 +67,12 @@ export class JwtTenantContextMiddleware implements NestMiddleware {
         void settle.finally(() => queryRunner.release())
       })
 
-      this.tenantContextStorage.run({ tenantId: payload.tenantId, queryRunner }, () => {
-        next()
-      })
+      this.tenantContextStorage.run(
+        { tenantId: payload.tenantId, queryRunner },
+        () => {
+          next()
+        },
+      )
     } catch {
       next(new UnauthorizedException('Missing or invalid access token'))
     }

@@ -25,7 +25,10 @@ import { LocalAuthGuard } from '@infrastructure/auth/guards/local-auth.guard'
 import { JwtAuthGuard } from '@infrastructure/auth/guards/jwt-auth.guard'
 import { CurrentUser } from '@infrastructure/auth/decorators/current-user.decorator'
 import type { IAuthenticatedUser } from '@infrastructure/auth/strategies/jwt.strategy'
-import { RegisterDto, LoginDto } from '@infrastructure/presentation/auth/auth.dtos'
+import {
+  RegisterDto,
+  LoginDto,
+} from '@infrastructure/presentation/auth/auth.dtos'
 import {
   AuthResponsePresenter,
   AuthUserPresenter,
@@ -81,7 +84,8 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ accessToken: string }> {
-    const presentedToken = req.cookies?.[REFRESH_COOKIE_NAME] as string | undefined
+    const presentedToken = req.cookies?.[REFRESH_COOKIE_NAME] as
+      string | undefined
     if (!presentedToken) {
       throw new UnauthorizedException('Missing refresh token')
     }
@@ -93,7 +97,6 @@ export class AuthController {
     return { accessToken }
   }
 
-
   @ResponseMessage('Logged out successfully')
   @HttpCode(HttpStatus.OK)
   @Post('logout')
@@ -101,7 +104,8 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<void> {
-    const presentedToken = req.cookies?.[REFRESH_COOKIE_NAME] as string | undefined
+    const presentedToken = req.cookies?.[REFRESH_COOKIE_NAME] as
+      string | undefined
     if (presentedToken) {
       await this.authProxy.getInstance().logout(presentedToken)
     }

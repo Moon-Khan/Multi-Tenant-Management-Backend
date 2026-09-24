@@ -17,6 +17,8 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(email: string, password: string): Promise<IUser> {
-    return this.userUsecaseProxy.getInstance().validateCredentials(email, password)
+    return this.userUsecaseProxy
+      .getInstance()
+      .validateCredentials(email, password)
   }
 }

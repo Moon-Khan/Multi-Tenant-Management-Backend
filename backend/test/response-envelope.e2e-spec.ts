@@ -13,7 +13,9 @@ describe('Response envelope (e2e)', () => {
   })
 
   it('wraps a successful response as { status, msg, data }', async () => {
-    const res = await request(ctx.app.getHttpServer()).get('/health').expect(200)
+    const res = await request(ctx.app.getHttpServer())
+      .get('/health')
+      .expect(200)
 
     expect(res.body).toMatchObject({ status: 200, msg: 'Service is healthy' })
     expect(res.body.data).toMatchObject({ status: 'ok', database: 'up' })
@@ -24,6 +26,10 @@ describe('Response envelope (e2e)', () => {
       .get('/this-route-does-not-exist')
       .expect(404)
 
-    expect(res.body).toEqual({ status: 404, msg: expect.any(String), data: null })
+    expect(res.body).toEqual({
+      status: 404,
+      msg: expect.any(String),
+      data: null,
+    })
   })
 })

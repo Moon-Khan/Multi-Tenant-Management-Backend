@@ -105,7 +105,10 @@ export class AuthUsecase {
   }
 
   getRefreshTokenMaxAgeMs(): number {
-    return resolveExpiryDate(new Date(0), this.jwtSettings.refreshExpiresIn).getTime()
+    return resolveExpiryDate(
+      new Date(0),
+      this.jwtSettings.refreshExpiresIn,
+    ).getTime()
   }
 
   async logout(presentedToken: string): Promise<void> {
@@ -113,6 +116,8 @@ export class AuthUsecase {
       const payload = await this.verifyRefreshToken(presentedToken)
       await this.refreshTokenRepository.revoke(payload.jti)
     } catch {
+      // An invalid/expired/already-logged-out token has nothing left to
+      // revoke — logout is idempotent either way.
     }
   }
 
@@ -139,7 +144,10 @@ export class AuthUsecase {
       userId: claims.sub,
       tenantId: claims.tenantId,
       tokenHash: hashToken(refreshToken),
-      expiresAt: resolveExpiryDate(new Date(), this.jwtSettings.refreshExpiresIn),
+      expiresAt: resolveExpiryDate(
+        new Date(),
+        this.jwtSettings.refreshExpiresIn,
+      ),
     })
 
     if (rotatedFromId) {
@@ -149,7 +157,9 @@ export class AuthUsecase {
     return refreshToken
   }
 
-  private async verifyRefreshToken(token: string): Promise<IRefreshTokenPayload> {
+  private async verifyRefreshToken(
+    token: string,
+  ): Promise<IRefreshTokenPayload> {
     try {
       return await this.jwtService.verifyAsync<IRefreshTokenPayload>(token, {
         secret: this.jwtSettings.refreshSecret,

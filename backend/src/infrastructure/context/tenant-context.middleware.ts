@@ -12,7 +12,6 @@ import { TenantContextStorage } from '@infrastructure/context/tenant-context.sto
 
 const TENANT_HEADER = 'x-tenant-slug'
 
-
 @Injectable()
 export class TenantContextMiddleware implements NestMiddleware {
   constructor(
@@ -25,7 +24,9 @@ export class TenantContextMiddleware implements NestMiddleware {
     try {
       const slug = req.header(TENANT_HEADER)
       if (!slug) {
-        throw new BadRequestException(`Missing required header: ${TENANT_HEADER}`)
+        throw new BadRequestException(
+          `Missing required header: ${TENANT_HEADER}`,
+        )
       }
 
       const tenant = await this.tenantRepository.findBySlug(slug)
@@ -50,9 +51,12 @@ export class TenantContextMiddleware implements NestMiddleware {
         void settle.finally(() => queryRunner.release())
       })
 
-      this.tenantContextStorage.run({ tenantId: tenant.id, queryRunner }, () => {
-        next()
-      })
+      this.tenantContextStorage.run(
+        { tenantId: tenant.id, queryRunner },
+        () => {
+          next()
+        },
+      )
     } catch (err) {
       next(err)
     }

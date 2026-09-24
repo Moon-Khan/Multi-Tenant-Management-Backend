@@ -6,7 +6,11 @@ import { TenantContextMiddleware } from '@infrastructure/context/tenant-context.
 import { JwtTenantContextMiddleware } from '@infrastructure/context/jwt-tenant-context.middleware'
 
 @Module({
-  imports: [RepositoriesModule, TenantContextStorageModule, JwtModule.register({})],
+  imports: [
+    RepositoriesModule,
+    TenantContextStorageModule,
+    JwtModule.register({}),
+  ],
   providers: [TenantContextMiddleware, JwtTenantContextMiddleware],
 
   exports: [

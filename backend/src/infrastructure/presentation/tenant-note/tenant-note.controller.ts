@@ -33,7 +33,9 @@ export class TenantNoteController {
   @Post()
   async create(@Body() dto: CreateTenantNoteDto): Promise<TenantNotePresenter> {
     const { tenantId } = this.tenantContextStorage.requireStore()
-    const note = await this.proxy.getInstance().create(dto.content, { tenantId })
+    const note = await this.proxy
+      .getInstance()
+      .create(dto.content, { tenantId })
     return new TenantNotePresenter(note)
   }
 

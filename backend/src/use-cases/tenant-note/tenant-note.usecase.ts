@@ -6,7 +6,10 @@ export class TenantNoteUsecase {
   constructor(private readonly tenantNoteRepository: TenantNoteRepository) {}
 
   create(content: string, ctx: IRequestContext): Promise<ITenantNote> {
-    return this.tenantNoteRepository.create({ tenantId: ctx.tenantId, content })
+    return this.tenantNoteRepository.create({
+      tenantId: ctx.tenantId,
+      content,
+    })
   }
 
   // No tenantId argument — RLS restricts the result set. This is the whole

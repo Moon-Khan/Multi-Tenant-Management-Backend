@@ -1,4 +1,9 @@
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common'
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
 import configuration from '@infrastructure/config/env-config/configuration'
@@ -34,9 +39,11 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
     consumer.apply(JwtTenantContextMiddleware).forRoutes(TenantNoteController)
 
-    consumer.apply(TenantContextMiddleware).forRoutes(
-      { path: 'auth/register', method: RequestMethod.POST },
-      { path: 'auth/login', method: RequestMethod.POST },
-    )
+    consumer
+      .apply(TenantContextMiddleware)
+      .forRoutes(
+        { path: 'auth/register', method: RequestMethod.POST },
+        { path: 'auth/login', method: RequestMethod.POST },
+      )
   }
 }
