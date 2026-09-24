@@ -69,10 +69,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
+          # No npm cache: this repo intentionally doesn't commit
+          # package-lock.json (see .gitignore) — setup-node's cache needs a
+          # lockfile to key off, and npm ci needs one to run at all.
 
-      - run: npm ci
+      - run: npm install
 
       - run: npm run lint
 
