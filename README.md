@@ -1,6 +1,8 @@
 # Multi-Tenant Management Backend
 
-A self-hosted, multi-tenant SaaS backend built with **NestJS**, **PostgreSQL**, and **Redis**, with a **React admin panel** on top. The whole stack runs locally via Docker Compose — no paid services required.
+A self-hosted, multi-tenant SaaS backend built with **NestJS**, **PostgreSQL**, and **Redis**. The whole stack runs locally via Docker Compose — no paid services required.
+
+> **This repository is the backend (API) only.** The React admin panel lives in a separate frontend repository and talks to this API over HTTP. Allow the frontend's origin through CORS with `CORS_ORIGIN` in `backend/.env` (defaults to `http://localhost:5173`, the Vite dev server).
 
 The core idea: prove real multi-tenancy and role-based access control, the two things a SaaS founder actually needs from a backend and a distinct skill set from typical payments/webhook integration work.
 
@@ -13,7 +15,6 @@ The core idea: prove real multi-tenancy and role-based access control, the two t
 - **Centralized error-handling middleware**
 - **Jest** unit tests and **Supertest** integration tests
 - **GitHub Actions CI** (free tier, public repo)
-- **React admin panel** for managing tenants and users
 
 ## Current status
 
@@ -30,8 +31,7 @@ This project is being built incrementally. What's implemented so far:
 - [x] Per-tenant API rate limiting via Redis: a global `RateLimitGuard` gives every tenant its own shared quota (300 req/min by default) keyed by `tenantId`, so one noisy tenant can't starve another's — enforced with an atomic Lua `INCR`+`EXPIRE`, with `X-RateLimit-*`/`Retry-After` headers on every response. Unauthenticated routes (no tenant yet) fall back to per-IP limiting, and sensitive ones get their own tighter override via `@RateLimit(limit, windowSeconds)` — register is 5/min, login 10/min, both per IP
 - [x] Automated tests: 27 Jest unit tests (use-cases + `RolesGuard`) and 21 Supertest e2e tests running against the real Docker Postgres/Redis stack — the e2e suite is what actually proves RLS tenant isolation, JWT-based tenant resolution, RBAC enforcement, refresh-token rotation/reuse-detection, and rate limiting all work together, not just in isolation
 - [x] Docker Compose infra for Postgres and Redis
-
-Not yet implemented (see roadmap above): CI and the React admin panel.
+- [x] GitHub Actions CI (`.github/workflows/ci.yml`) running lint, build, unit tests, and e2e tests against Postgres + Redis service containers
 
 ## Tech stack
 
@@ -40,7 +40,6 @@ Not yet implemented (see roadmap above): CI and the React admin panel.
 | API | NestJS (TypeScript) |
 | Database | PostgreSQL 16, TypeORM, Row-Level Security |
 | Cache / rate limiting | Redis 7 |
-| Admin UI | React |
 | Auth | JWT (access + refresh rotation) |
 | Testing | Jest, Supertest |
 | CI | GitHub Actions |
