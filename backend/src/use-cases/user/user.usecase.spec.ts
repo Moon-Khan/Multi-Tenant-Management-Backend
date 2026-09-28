@@ -54,6 +54,29 @@ describe('UserUsecase', () => {
       expect(createArg.passwordHash.length).toBeGreaterThan(0)
     })
 
+    it('maps a unique-constraint race on create to Conflict', async () => {
+      userRepository.findByEmail.mockResolvedValue(null)
+      userRepository.create.mockRejectedValue(
+        Object.assign(new Error('duplicate key'), {
+          driverError: { code: '23505' },
+        }),
+      )
+
+      await expect(
+        usecase.register('tenant-1', 'alice@example.com', 'password123'),
+      ).rejects.toThrow(ConflictException)
+    })
+
+    it('rethrows other create failures unchanged', async () => {
+      userRepository.findByEmail.mockResolvedValue(null)
+      const failure = new Error('connection lost')
+      userRepository.create.mockRejectedValue(failure)
+
+      await expect(
+        usecase.register('tenant-1', 'alice@example.com', 'password123'),
+      ).rejects.toBe(failure)
+    })
+
     it('passes an explicit role through when given one', async () => {
       userRepository.findByEmail.mockResolvedValue(null)
       userRepository.create.mockImplementation((data) =>

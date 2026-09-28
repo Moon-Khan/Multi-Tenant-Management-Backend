@@ -1,18 +1,15 @@
 import { Injectable } from '@nestjs/common'
 import { AsyncLocalStorage } from 'node:async_hooks'
-import { QueryRunner } from 'typeorm'
 
 export interface ITenantContextStore {
   tenantId: string
-  queryRunner: QueryRunner
 }
 
 /**
- * Thin wrapper around Node's AsyncLocalStorage. Holds, per-request, the
- * resolved tenant id and the QueryRunner whose transaction carries the
- * `app.current_tenant_id` session variable that Postgres RLS policies read.
- * Tenant-scoped repositories pull their EntityManager from here instead of
- * from Nest's default @InjectRepository() pool connection.
+ * Thin wrapper around Node's AsyncLocalStorage. Answers exactly one
+ * question per request: "which tenant am I operating under?" It holds no
+ * database state — a DB unit of work for that tenant is opened (and closed)
+ * on demand by TenantTransaction, which reads the tenant id from here.
  */
 @Injectable()
 export class TenantContextStorage {
@@ -30,7 +27,7 @@ export class TenantContextStorage {
     const store = this.als.getStore()
     if (!store) {
       throw new Error(
-        'No tenant context is active. Did you forget to run this code path through TenantContextMiddleware?',
+        'No tenant context is active. Did you forget to run this code path through TenantContextMiddleware or JwtTenantContextMiddleware?',
       )
     }
     return store

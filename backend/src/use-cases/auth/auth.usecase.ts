@@ -139,7 +139,7 @@ export class AuthUsecase {
       expiresIn: this.jwtSettings.refreshExpiresIn as never,
     })
 
-    await this.refreshTokenRepository.create({
+    const record = {
       id: jti,
       userId: claims.sub,
       tenantId: claims.tenantId,
@@ -148,10 +148,12 @@ export class AuthUsecase {
         new Date(),
         this.jwtSettings.refreshExpiresIn,
       ),
-    })
+    }
 
     if (rotatedFromId) {
-      await this.refreshTokenRepository.markRotated(rotatedFromId, jti)
+      await this.refreshTokenRepository.rotate(record, rotatedFromId)
+    } else {
+      await this.refreshTokenRepository.create(record)
     }
 
     return refreshToken
