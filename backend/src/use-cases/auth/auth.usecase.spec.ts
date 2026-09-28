@@ -49,7 +49,7 @@ describe('AuthUsecase', () => {
     refreshTokenRepository = {
       create: jest.fn(),
       findById: jest.fn(),
-      markRotated: jest.fn(),
+      rotate: jest.fn(),
       revoke: jest.fn(),
       revokeAllForUser: jest.fn(),
     } as unknown as jest.Mocked<RefreshTokenRepository>
@@ -94,7 +94,7 @@ describe('AuthUsecase', () => {
       const { refreshToken: firstRefresh } = await usecase.issueTokens(user)
       const record = storedRecord({ tokenHash: hashToken(firstRefresh) })
       refreshTokenRepository.findById.mockResolvedValue(record)
-      refreshTokenRepository.create.mockImplementation((data) =>
+      refreshTokenRepository.rotate.mockImplementation((data) =>
         Promise.resolve(storedRecord({ ...data })),
       )
 
@@ -102,9 +102,9 @@ describe('AuthUsecase', () => {
         await usecase.refresh(firstRefresh)
 
       expect(secondRefresh).not.toBe(firstRefresh)
-      expect(refreshTokenRepository.markRotated).toHaveBeenCalledWith(
+      expect(refreshTokenRepository.rotate).toHaveBeenCalledWith(
+        expect.objectContaining({ tokenHash: hashToken(secondRefresh) }),
         record.id,
-        expect.any(String),
       )
       expect(refreshTokenRepository.revokeAllForUser).not.toHaveBeenCalled()
 

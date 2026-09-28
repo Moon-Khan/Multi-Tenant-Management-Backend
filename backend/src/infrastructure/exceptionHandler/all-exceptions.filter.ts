@@ -12,6 +12,10 @@ import { IApiResponse } from '@infrastructure/response/api-response.interface'
 
 const KNOWN_BODY_KEYS = new Set(['message', 'statusCode', 'error'])
 
+// node-postgres's error when no pooled connection frees up within
+// connectionTimeoutMillis — the pool is saturated, not the request invalid.
+const POOL_TIMEOUT_MESSAGE = 'timeout exceeded when trying to connect'
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger('ExceptionsHandler')
@@ -35,6 +39,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
   private resolve(exception: unknown): IApiResponse<unknown> {
     if (exception instanceof HttpException) {
       return this.fromHttpException(exception)
+    }
+
+    if (
+      exception instanceof Error &&
+      exception.message.includes(POOL_TIMEOUT_MESSAGE)
+    ) {
+      return {
+        status: HttpStatus.SERVICE_UNAVAILABLE,
+        msg: 'Service temporarily overloaded, please retry',
+        data: null,
+      }
     }
 
     if (exception instanceof QueryFailedError) {

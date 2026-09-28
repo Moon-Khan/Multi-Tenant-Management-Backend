@@ -7,9 +7,6 @@ import {
   uniqueSuffix,
 } from './utils/test-app'
 
-const sleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms))
-
 // There's no API for creating a non-member account (self-registration is
 // deliberately locked to "member" — see the RBAC privilege-escalation
 // fix), so RBAC tests seed a viewer directly, connecting as the
@@ -17,11 +14,8 @@ const sleep = (ms: number): Promise<void> =>
 // RLS entirely — this is test fixture setup, not something that needs to
 // prove RLS holds for a write.
 //
-// Retries briefly: the register call right before this resolves as soon
-// as its HTTP response is sent, but TenantContextMiddleware commits that
-// request's transaction asynchronously from a `res.on('finish', ...)`
-// handler — so immediately after the response, the row can still be a few
-// milliseconds from actually being committed and visible.
+// No retry needed: the register request's transaction commits before its
+// response is sent, so the row is visible as soon as the call returns.
 async function setUserRole(
   tenantId: string,
   email: string,
@@ -36,19 +30,15 @@ async function setUserRole(
   })
   await client.connect()
   try {
-    for (let attempt = 0; attempt < 20; attempt++) {
-      const result = await client.query(
-        'UPDATE users SET role = $1 WHERE tenant_id = $2 AND email = $3 RETURNING id',
-        [role, tenantId, email],
-      )
-      if ((result.rowCount ?? 0) > 0) {
-        return
-      }
-      await sleep(50)
-    }
-    throw new Error(
-      `setUserRole: no user found for tenant ${tenantId} / ${email} after retrying`,
+    const result = await client.query(
+      'UPDATE users SET role = $1 WHERE tenant_id = $2 AND email = $3 RETURNING id',
+      [role, tenantId, email],
     )
+    if ((result.rowCount ?? 0) === 0) {
+      throw new Error(
+        `setUserRole: no user found for tenant ${tenantId} / ${email}`,
+      )
+    }
   } finally {
     await client.end()
   }

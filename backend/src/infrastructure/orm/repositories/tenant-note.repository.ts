@@ -1,36 +1,32 @@
 import { Injectable } from '@nestjs/common'
-import { EntityManager } from 'typeorm'
 import {
   ICreateTenantNoteData,
   ITenantNoteRepository,
 } from '@domain/repositories/tenant-note.repository.interface'
 import { ITenantNote } from '@domain/model/tenant-note.interface'
 import { TenantNote } from '@infrastructure/orm/entities/tenant-note.entity'
-import { TenantContextStorage } from '@infrastructure/context/tenant-context.storage'
+import { TenantTransaction } from '@infrastructure/context/tenant-transaction'
 
 /**
  * Deliberately does NOT use @InjectRepository(TenantNote) — that would run
- * queries on Nest's default pooled connection, outside the per-request
- * transaction that carries `app.current_tenant_id`. Instead it pulls the
- * EntityManager off the request-scoped QueryRunner in TenantContextStorage,
- * so every query here runs inside the RLS-aware transaction.
+ * queries on Nest's default pooled connection with no
+ * `app.current_tenant_id` set, so RLS would hide every row. Instead each
+ * method is one short TenantTransaction for the current request's tenant.
  */
 @Injectable()
 export class TenantNoteRepository implements ITenantNoteRepository {
-  constructor(private readonly tenantContextStorage: TenantContextStorage) {}
+  constructor(private readonly tenantTransaction: TenantTransaction) {}
 
-  private get manager(): EntityManager {
-    return this.tenantContextStorage.requireStore().queryRunner.manager
-  }
-
-  async create(data: ICreateTenantNoteData): Promise<ITenantNote> {
-    const repo = this.manager.getRepository(TenantNote)
-    return repo.save(repo.create(data))
+  create(data: ICreateTenantNoteData): Promise<ITenantNote> {
+    return this.tenantTransaction.run((manager) => {
+      const repo = manager.getRepository(TenantNote)
+      return repo.save(repo.create(data))
+    })
   }
 
   findAll(): Promise<ITenantNote[]> {
-    return this.manager
-      .getRepository(TenantNote)
-      .find({ order: { createdAt: 'DESC' } })
+    return this.tenantTransaction.run((manager) =>
+      manager.getRepository(TenantNote).find({ order: { createdAt: 'DESC' } }),
+    )
   }
 }

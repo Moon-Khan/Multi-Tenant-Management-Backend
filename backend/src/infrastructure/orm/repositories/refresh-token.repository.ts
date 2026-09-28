@@ -25,8 +25,24 @@ export class RefreshTokenRepository implements IRefreshTokenRepository {
     return this.repo.findOne({ where: { id } })
   }
 
-  async markRotated(id: string, replacedByTokenId: string): Promise<void> {
-    await this.repo.update({ id }, { revokedAt: new Date(), replacedByTokenId })
+  // Inserting the replacement and revoking the old token must be atomic:
+  // otherwise a failure between the two leaves either an orphaned new token
+  // or an old token that still looks unused.
+  rotate(
+    data: ICreateRefreshTokenData,
+    rotatedFromId: string,
+  ): Promise<IRefreshToken> {
+    return this.repo.manager.transaction(async (manager) => {
+      const repo = manager.getRepository(RefreshToken)
+      const created = await repo.save(
+        repo.create({ ...data, revokedAt: null, replacedByTokenId: null }),
+      )
+      await repo.update(
+        { id: rotatedFromId },
+        { revokedAt: new Date(), replacedByTokenId: data.id },
+      )
+      return created
+    })
   }
 
   async revoke(id: string): Promise<void> {

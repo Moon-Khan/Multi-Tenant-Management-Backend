@@ -20,6 +20,13 @@ import { RefreshToken } from '@infrastructure/orm/entities/refresh-token.entity'
         database: configService.get<string>('database.name'),
         entities: [Tenant, TenantNote, User, RefreshToken],
         synchronize: false,
+        extra: {
+          max: configService.get<number>('database.poolMax'),
+          connectionTimeoutMillis: configService.get<number>(
+            'database.poolAcquireTimeoutMs',
+          ),
+          idleTimeoutMillis: 30_000,
+        },
       }),
     }),
   ],

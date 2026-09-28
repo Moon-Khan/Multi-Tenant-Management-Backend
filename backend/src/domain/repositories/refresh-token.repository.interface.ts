@@ -11,7 +11,10 @@ export interface ICreateRefreshTokenData {
 export interface IRefreshTokenRepository {
   create: (data: ICreateRefreshTokenData) => Promise<IRefreshToken>
   findById: (id: string) => Promise<IRefreshToken | null>
-  markRotated: (id: string, replacedByTokenId: string) => Promise<void>
+  rotate: (
+    data: ICreateRefreshTokenData,
+    rotatedFromId: string,
+  ) => Promise<IRefreshToken>
   revoke: (id: string) => Promise<void>
   revokeAllForUser: (userId: string) => Promise<void>
 }

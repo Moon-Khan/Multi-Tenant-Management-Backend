@@ -4,6 +4,11 @@ import { UserRepository } from '@infrastructure/orm/repositories/user.repository
 import { IUser, UserRole } from '@domain/model/user.interface'
 
 const SALT_ROUNDS = 12
+const PG_UNIQUE_VIOLATION = '23505'
+
+const isUniqueViolation = (err: unknown): boolean =>
+  (err as { driverError?: { code?: string } } | null)?.driverError?.code ===
+  PG_UNIQUE_VIOLATION
 
 export class UserUsecase {
   constructor(private readonly userRepository: UserRepository) {}
@@ -14,13 +19,33 @@ export class UserUsecase {
     password: string,
     role: UserRole = 'member',
   ): Promise<IUser> {
+    const conflict = new ConflictException(
+      `Email "${email}" is already registered`,
+    )
+
+    // Each repository call is its own short transaction; the slow bcrypt
+    // hash runs between them without holding a DB connection.
     const existing = await this.userRepository.findByEmail(email)
     if (existing) {
-      throw new ConflictException(`Email "${email}" is already registered`)
+      throw conflict
     }
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
-    return this.userRepository.create({ tenantId, email, passwordHash, role })
+    try {
+      return await this.userRepository.create({
+        tenantId,
+        email,
+        passwordHash,
+        role,
+      })
+    } catch (err) {
+      // A concurrent registration for the same email can pass the check
+      // above too; the (tenant_id, email) unique constraint catches it.
+      if (isUniqueViolation(err)) {
+        throw conflict
+      }
+      throw err
+    }
   }
 
   async validatePassword(user: IUser, password: string): Promise<boolean> {

@@ -1,36 +1,38 @@
 import { Injectable } from '@nestjs/common'
-import { EntityManager } from 'typeorm'
 import {
   ICreateUserData,
   IUserRepository,
 } from '@domain/repositories/user.repository.interface'
 import { IUser } from '@domain/model/user.interface'
 import { User } from '@infrastructure/orm/entities/user.entity'
-import { TenantContextStorage } from '@infrastructure/context/tenant-context.storage'
+import { TenantTransaction } from '@infrastructure/context/tenant-transaction'
 
 /**
  * Same rationale as TenantNoteRepository: `users` is RLS-protected, so
- * queries must run through the request-scoped, RLS-aware transaction
- * (TenantContextStorage), not Nest's default pooled @InjectRepository(User).
+ * every query runs inside a TenantTransaction (which sets
+ * `app.current_tenant_id`), not on Nest's default pooled
+ * @InjectRepository(User) connection.
  */
 @Injectable()
 export class UserRepository implements IUserRepository {
-  constructor(private readonly tenantContextStorage: TenantContextStorage) {}
+  constructor(private readonly tenantTransaction: TenantTransaction) {}
 
-  private get manager(): EntityManager {
-    return this.tenantContextStorage.requireStore().queryRunner.manager
-  }
-
-  async create(data: ICreateUserData): Promise<IUser> {
-    const repo = this.manager.getRepository(User)
-    return repo.save(repo.create(data))
+  create(data: ICreateUserData): Promise<IUser> {
+    return this.tenantTransaction.run((manager) => {
+      const repo = manager.getRepository(User)
+      return repo.save(repo.create(data))
+    })
   }
 
   findByEmail(email: string): Promise<IUser | null> {
-    return this.manager.getRepository(User).findOne({ where: { email } })
+    return this.tenantTransaction.run((manager) =>
+      manager.getRepository(User).findOne({ where: { email } }),
+    )
   }
 
   findById(id: string): Promise<IUser | null> {
-    return this.manager.getRepository(User).findOne({ where: { id } })
+    return this.tenantTransaction.run((manager) =>
+      manager.getRepository(User).findOne({ where: { id } }),
+    )
   }
 }
