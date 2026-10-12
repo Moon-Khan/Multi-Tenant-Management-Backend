@@ -59,6 +59,33 @@ $ npm run test:cov
 
 ## Deployment
 
+### Run with Docker Compose
+
+From the `infra` directory, copy the backend environment template and start the stack:
+
+```bash
+cp ../backend/.env.example ../backend/.env
+docker compose up --build -d
+```
+
+The API is available at `http://localhost:3000`; PostgreSQL and Redis are started
+with it. Compose connects the API to those services by their service names. The
+provided development credentials and JWT secrets in `.env.example` are for local
+use only; change them before deploying anywhere shared or public.
+
+Run database migrations once the database is ready:
+
+```bash
+docker compose --profile tools run --rm migrate
+```
+
+The PostgreSQL initialization script provisions the `app_runtime` role on the
+first startup of a fresh data volume. If you change that setup after the volume
+has already been initialized, the SQL init script will not run again automatically.
+
+To stop the services while keeping database data, run `docker compose down`.
+To also delete the PostgreSQL volume and its data, run `docker compose down -v`.
+
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
 
 If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:

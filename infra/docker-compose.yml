@@ -33,5 +33,39 @@ services:
       timeout: 5s
       retries: 10
 
+  api:
+    build:
+      context: ../backend
+      target: production
+    restart: unless-stopped
+    env_file:
+      - ../backend/.env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  migrate:
+    build:
+      context: ../backend
+      target: migrate
+    env_file:
+      - ../backend/.env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles: ['tools']
+
 volumes:
   postgres-data:
